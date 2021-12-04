@@ -6,7 +6,7 @@ with open("README.md", "r", encoding="utf8") as fh:
 setup(
     install_requires=["aiohttp"],
     name="ameilisearch",
-    version="0.1.0",
+    version="0.1.1",
     author="SaidBySolo",
     author_email="saidbysolo@gmail.com",
     description="The python async client for MeiliSearch API.",

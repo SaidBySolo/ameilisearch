@@ -14,9 +14,6 @@ import ameilisearch
 
 
 async def main():
-    async with ameilisearch.Client("http://127.0.0.1:7700", 'masterKey') as client:
-        index = await client.index("movies")
-
     documents = [
         { 'id': 1, 'title': 'Carol', 'genres': ['Romance', 'Drama'] },
         { 'id': 2, 'title': 'Wonder Woman', 'genres': ['Action', 'Adventure'] },
@@ -26,9 +23,10 @@ async def main():
         { 'id': 6, 'title': 'Philadelphia', 'genres': ['Drama'] },
     ]
 
-    # If the index 'movies' does not exist, MeiliSearch creates it when you first add the documents.
-    async with index as index:
-        index.add_documents(documents) # => { "updateId": 0 }
+    async with ameilisearch.Client("http://127.0.0.1:7700", 'masterKey') as client:
+        async with client.index("movies") as index:
+            # If the index 'movies' does not exist, MeiliSearch creates it when you first add the documents.
+            await index.add_documents(documents) # => { "updateId": 0 }
 
 asyncio.get_event_loop().run_until_complete(main())
 

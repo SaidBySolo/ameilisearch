@@ -44,6 +44,11 @@ class Index:
         self.created_at = self._iso_to_date_time(created_at)
         self.updated_at = self._iso_to_date_time(updated_at)
 
+    async def close(self):
+        """Close client session"""
+        if self.http.session and not self.http.session.closed:
+            await self.http.session.close()
+
     async def delete(self) -> ClientResponse:
         """Delete the index.
         Raises

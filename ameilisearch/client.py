@@ -29,6 +29,11 @@ class Client:
 
         self.http = HttpRequests(self.config)
 
+    async def close(self):
+        """Close client session"""
+        if self.http.session and not self.http.session.closed:
+            await self.http.session.close()
+
     async def create_index(
         self, uid: str, options: Optional[Dict[str, Any]] = None
     ) -> Index:
@@ -182,12 +187,12 @@ class Client:
             An error containing details about why MeiliSearch can't process your request. MeiliSearch error codes are described here: https://docs.meilisearch.com/errors/#meilisearch-errors
         """
         try:
-            index_instance = self.get_index(uid)
+            index_instance = await self.get_index(uid)
         except MeiliSearchApiError as err:
             if err.code != "index_not_found":
                 raise err
-            index_instance = self.create_index(uid, options)
-        return await index_instance
+            index_instance = await self.create_index(uid, options)
+        return index_instance
 
     async def get_all_stats(self) -> Dict[str, Any]:
         """Get all stats of MeiliSearch

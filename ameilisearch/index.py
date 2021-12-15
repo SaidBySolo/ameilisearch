@@ -135,7 +135,10 @@ class Index:
         if options is None:
             options = {}
         payload = {**options, "uid": uid}
-        index_dict = await HttpRequests(config).post(config.paths.index, payload)
+        http = HttpRequests(config)
+        index_dict = await http.post(config.paths.index, payload)
+        if http.session:
+            await http.session.close()
 
         return cls(config, index_dict["uid"], index_dict["primaryKey"])
 

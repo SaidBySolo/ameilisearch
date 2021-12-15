@@ -44,7 +44,7 @@ class Index:
         self.created_at = self._iso_to_date_time(created_at)
         self.updated_at = self._iso_to_date_time(updated_at)
 
-    async def close(self):
+    async def close(self) -> None:
         """Close client session"""
         if self.http.session and not self.http.session.closed:
             await self.http.session.close()
@@ -1121,7 +1121,7 @@ class Index:
         primary_key = urlencode({"primaryKey": primary_key})
         return f"{self.config.paths.index}/{self.uid}/{self.config.paths.document}?{primary_key}"
 
-    async def __aenter__(self):
+    async def __aenter__(self) -> "Index":
         return self
 
     async def __aexit__(

@@ -29,7 +29,7 @@ class Client:
 
         self.http = HttpRequests(self.config)
 
-    async def close(self):
+    async def close(self) -> None:
         """Close client session"""
         if self.http.session and not self.http.session.closed:
             await self.http.session.close()
@@ -303,7 +303,7 @@ class Client:
         """
         return await self.http.get(self.config.paths.dumps + "/" + str(uid) + "/status")
 
-    async def __aenter__(self):
+    async def __aenter__(self) -> "Client":
         return self
 
     async def __aexit__(

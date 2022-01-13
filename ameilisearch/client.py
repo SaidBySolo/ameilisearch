@@ -140,7 +140,7 @@ class Client:
         """
         return await self.http.get(f'{self.config.paths.index}/{uid}')
 
-    async def index(self, uid: str) -> Index:
+    def index(self, uid: str) -> Index:
         """Create a local reference to an index identified by UID, without doing an HTTP call.
         Calling this method doesn't create an index in the MeiliSearch instance, but grants access to all the other methods in the Index class.
         Parameters

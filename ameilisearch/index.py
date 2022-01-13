@@ -33,12 +33,12 @@ class Index:
         primary_key:
             Primary-key of the index.
         """
-        self.config = config
-        self.http = HttpRequests(config)
-        self.uid = uid
-        self.primary_key = primary_key
-        self.created_at = self._iso_to_date_time(created_at)
-        self.updated_at = self._iso_to_date_time(updated_at)
+        self.config: Config = config
+        self.http: HttpRequests = HttpRequests(config)
+        self.uid:str = uid
+        self.primary_key: Optional[str] = primary_key
+        self.created_at: Optional[datetime] = self._iso_to_date_time(created_at)
+        self.updated_at: Optional[datetime] = self._iso_to_date_time(updated_at)
 
     async def delete(self) -> Dict[str, Any]:
         """Delete the index.
@@ -1086,7 +1086,7 @@ class Index:
         primary_key = parse.urlencode({'primaryKey': primary_key})
         return f'{self.config.paths.index}/{self.uid}/{self.config.paths.document}?{primary_key}'
 
-    async def __aenter__(self):
+    async def __aenter__(self) -> "Index":
         return self
 
     async def __aexit__(
@@ -1094,6 +1094,6 @@ class Index:
         exc_type: Optional[Type[BaseException]],
         exc: Optional[BaseException],
         tb: Optional[TracebackType],
-    ):
+    ) -> None:
         if self.http.session:
             await self.http.session.close()

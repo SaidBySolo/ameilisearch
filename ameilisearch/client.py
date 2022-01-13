@@ -1,11 +1,10 @@
-from types import TracebackType
-from typing import Any, Dict, List, Optional, Type
+from typing import Any, Dict, List, Optional
 
-from ameilisearch._httprequests import HttpRequests
-from ameilisearch.config import Config
-from ameilisearch.errors import MeiliSearchApiError, MeiliSearchError
 from ameilisearch.index import Index
-
+from ameilisearch.config import Config
+from ameilisearch.task import get_task, get_tasks, wait_for_task
+from ameilisearch._httprequests import HttpRequests
+from ameilisearch.errors import MeiliSearchError
 
 class Client:
     """
@@ -15,28 +14,21 @@ class Client:
     """
 
     def __init__(
-        self, url: str, apiKey: Optional[str] = None, timeout: Optional[int] = None
+        self, url: str, api_key: Optional[str] = None, timeout: Optional[int] = None
     ) -> None:
         """
         Parameters
         ----------
         url:
             The url to the MeiliSearch API (ex: http://localhost:7700)
-        apiKey:
+        api_key:
             The optional API key for MeiliSearch
         """
-        self.config = Config(url, apiKey, timeout=timeout)
+        self.config = Config(url, api_key, timeout=timeout)
 
         self.http = HttpRequests(self.config)
 
-    async def close(self) -> None:
-        """Close client session"""
-        if self.http.session and not self.http.session.closed:
-            await self.http.session.close()
-
-    async def create_index(
-        self, uid: str, options: Optional[Dict[str, Any]] = None
-    ) -> Index:
+    async def create_index(self, uid: str, options: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """Create an index.
         Parameters
         ----------
@@ -46,8 +38,9 @@ class Client:
             Options passed during index creation (ex: primaryKey).
         Returns
         -------
-        index : Index
-            An instance of Index containing the information of the newly created index.
+        task:
+            Dictionary containing a task to track the informations about the progress of an asynchronous process.
+            https://docs.meilisearch.com/reference/api/tasks.html#get-one-task
         Raises
         ------
         MeiliSearchApiError
@@ -55,28 +48,24 @@ class Client:
         """
         return await Index.create(self.config, uid, options)
 
-    async def delete_index_if_exists(self, uid: str) -> bool:
-        """Deletes an index if it already exists
+    async def delete_index(self, uid: str) -> Dict[str, Any]:
+        """Deletes an index
         Parameters
         ----------
         uid:
             UID of the index.
         Returns
-        --------
-        Returns True if an index was deleted or False if not
+        -------
+        task:
+            Dictionary containing a task to track the informations about the progress of an asynchronous process.
+            https://docs.meilisearch.com/reference/api/tasks.html#get-one-task
         Raises
         ------
         MeiliSearchApiError
             An error containing details about why MeiliSearch can't process your request. MeiliSearch error codes are described here: https://docs.meilisearch.com/errors/#meilisearch-errors
         """
 
-        try:
-            await self.http.delete(f"{self.config.paths.index}/{uid}")
-            return True
-        except MeiliSearchApiError as error:
-            if error.code != "index_not_found":
-                raise error
-            return False
+        return await self.http.delete(f'{self.config.paths.index}/{uid}')
 
     async def get_indexes(self) -> List[Index]:
         """Get all indexes.
@@ -149,9 +138,9 @@ class Client:
         MeiliSearchApiError
             An error containing details about why MeiliSearch can't process your request. MeiliSearch error codes are described here: https://docs.meilisearch.com/errors/#meilisearch-errors
         """
-        return await self.http.get(f"{self.config.paths.index}/{uid}")
+        return await self.http.get(f'{self.config.paths.index}/{uid}')
 
-    def index(self, uid: str) -> Index:
+    async def index(self, uid: str) -> Index:
         """Create a local reference to an index identified by UID, without doing an HTTP call.
         Calling this method doesn't create an index in the MeiliSearch instance, but grants access to all the other methods in the Index class.
         Parameters
@@ -165,34 +154,7 @@ class Client:
         """
         if uid is not None:
             return Index(self.config, uid=uid)
-        raise Exception("The index UID should not be None")
-
-    async def get_or_create_index(
-        self, uid: str, options: Optional[Dict[str, Any]] = None
-    ) -> Index:
-        """Get an index, or create it if it doesn't exist.
-        Parameters
-        ----------
-        uid:
-            UID of the index
-        options (optional): dict
-            Options passed during index creation (ex: primaryKey)
-        Returns
-        -------
-        index:
-            An instance of Index containing the information of the retrieved or newly created index.
-        Raises
-        ------
-        MeiliSearchApiError
-            An error containing details about why MeiliSearch can't process your request. MeiliSearch error codes are described here: https://docs.meilisearch.com/errors/#meilisearch-errors
-        """
-        try:
-            index_instance = await self.get_index(uid)
-        except MeiliSearchApiError as err:
-            if err.code != "index_not_found":
-                raise err
-            index_instance = await self.create_index(uid, options)
-        return index_instance
+        raise Exception('The index UID should not be None')
 
     async def get_all_stats(self) -> Dict[str, Any]:
         """Get all stats of MeiliSearch
@@ -223,20 +185,38 @@ class Client:
         return await self.http.get(self.config.paths.health)
 
     async def is_healthy(self) -> bool:
-        """Get health of the MeiliSearch server."""
+        """Get health of the MeiliSearch server.
+        """
         try:
             await self.health()
         except MeiliSearchError:
             return False
         return True
 
-    async def get_keys(self) -> Dict[str, str]:
-        """Get all keys.
-        Get the public and private keys.
+    async def get_key(self, key: str) -> Dict[str, Any]:
+        """Gets information about a specific API key.
+        Parameters
+        ----------
+        key:
+            The key for which to retrieve the information.
+        Returns
+        -------
+        key:
+            The API key.
+            https://docs.meilisearch.com/reference/api/keys.html#get-key
+        Raises
+        ------
+        MeiliSearchApiError
+            An error containing details about why MeiliSearch can't process your request. MeiliSearch error codes are described here: https://docs.meilisearch.com/errors/#meilisearch-errors
+        """
+        return await self.http.get(f'{self.config.paths.keys}/{key}')
+
+    async def get_keys(self) -> Dict[str, Any]:
+        """Gets the MeiliSearch API keys.
         Returns
         -------
         keys:
-            Dictionary of keys and their information.
+            API keys.
             https://docs.meilisearch.com/reference/api/keys.html#get-keys
         Raises
         ------
@@ -244,6 +224,75 @@ class Client:
             An error containing details about why MeiliSearch can't process your request. MeiliSearch error codes are described here: https://docs.meilisearch.com/errors/#meilisearch-errors
         """
         return await self.http.get(self.config.paths.keys)
+
+    async def create_key(
+        self,
+        options: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """Creates a new API key.
+        Parameters
+        ----------
+        options:
+            Options, the information to use in creating the key (ex: { 'actions': ['*'], 'indexes': ['movies'], 'description': 'Search Key', 'expiresAt': '22-01-01' }).
+            An `actions`, an `indexes` and a `expiresAt` fields are mandatory,`None` should be specified for no expiration date.
+            `actions`: A list of actions permitted for the key. ["*"] for all actions.
+            `indexes`: A list of indexes permitted for the key. ["*"] for all indexes.
+            Note that if an expires_at value is included it should be in UTC time.
+        Returns
+        -------
+        keys:
+            The new API key.
+            https://docs.meilisearch.com/reference/api/keys.html#get-keys
+        Raises
+        ------
+        MeiliSearchApiError
+            An error containing details about why MeiliSearch can't process your request. MeiliSearch error codes are described here: https://docs.meilisearch.com/errors/#meilisearch-errors
+        """
+        return await self.http.post(f'{self.config.paths.keys}', options)
+
+    async def update_key(
+        self,
+        key: str,
+        options: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """Update an API key.
+        Parameters
+        ----------
+        key:
+            The key for which to update the information.
+        options:
+            The information to use in creating the key (ex: { 'description': 'Search Key', 'expiresAt': '22-01-01' }). Note that if an
+            expires_at value is included it should be in UTC time.
+        Returns
+        -------
+        key:
+            The updated API key.
+            https://docs.meilisearch.com/reference/api/keys.html#get-keys
+        Raises
+        ------
+        MeiliSearchApiError
+            An error containing details about why MeiliSearch can't process your request. MeiliSearch error codes are described here: https://docs.meilisearch.com/errors/#meilisearch-errors
+        """
+        url = f'{self.config.paths.keys}/{key}'
+        return await self.http.patch(url, options)
+
+    async def delete_key(self, key: str) -> Dict[str, int]:
+        """Deletes an API key.
+        Parameters
+        ----------
+        key:
+            The key to delete.
+        Returns
+        -------
+        keys:
+            The Response status code. 204 signifies a successful delete.
+            https://docs.meilisearch.com/reference/api/keys.html#get-keys
+        Raises
+        ------
+        MeiliSearchApiError
+            An error containing details about why MeiliSearch can't process your request. MeiliSearch error codes are described here: https://docs.meilisearch.com/errors/#meilisearch-errors
+        """
+        return await self.http.delete(f'{self.config.paths.keys}/{key}')
 
     async def get_version(self) -> Dict[str, str]:
         """Get version MeiliSearch
@@ -301,16 +350,61 @@ class Client:
         MeiliSearchApiError
             An error containing details about why MeiliSearch can't process your request. MeiliSearch error codes are described here: https://docs.meilisearch.com/errors/#meilisearch-errors
         """
-        return await self.http.get(self.config.paths.dumps + "/" + str(uid) + "/status")
+        return await self.http.get(
+            self.config.paths.dumps + '/' + str(uid) + '/status'
+        )
 
-    async def __aenter__(self) -> "Client":
-        return self
+    async def get_tasks(self) -> Dict[str, List[Dict[str, Any]]]:
+        """Get all tasks.
+        Returns
+        -------
+        task:
+            Dictionary containing a list of all enqueued, processing, succeeded or failed tasks.
+        Raises
+        ------
+        MeiliSearchApiError
+            An error containing details about why MeiliSearch can't process your request. MeiliSearch error codes are described here: https://docs.meilisearch.com/errors/#meilisearch-errors
+        """
+        return await get_tasks(self.config)
 
-    async def __aexit__(
-        self,
-        exc_type: Optional[Type[BaseException]],
-        exc: Optional[BaseException],
-        tb: Optional[TracebackType],
-    ):
-        if self.http.session:
-            await self.http.session.close()
+    async def get_task(self, uid: int) -> Dict[str, Any]:
+        """Get one task.
+        Parameters
+        ----------
+        uid:
+            Identifier of the task.
+        Returns
+        -------
+        task:
+            Dictionary containing information about the processed asynchronous task.
+        Raises
+        ------
+        MeiliSearchApiError
+            An error containing details about why MeiliSearch can't process your request. MeiliSearch error codes are described here: https://docs.meilisearch.com/errors/#meilisearch-errors
+        """
+        return await get_task(self.config, uid)
+
+    async def wait_for_task(
+        self, uid: int,
+        timeout_in_ms: int = 5000,
+        interval_in_ms: int = 50,
+    ) -> Dict[str, Any]:
+        """Wait until MeiliSearch processes a task until it fails or succeeds.
+        Parameters
+        ----------
+        uid:
+            Identifier of the task to wait for being processed.
+        timeout_in_ms (optional):
+            Time the method should wait before raising a MeiliSearchTimeoutError
+        interval_in_ms (optional):
+            Time interval the method should wait (sleep) between requests
+        Returns
+        -------
+        task:
+            Dictionary containing information about the processed asynchronous task.
+        Raises
+        ------
+        MeiliSearchTimeoutError
+            An error containing details about why MeiliSearch can't process your request. MeiliSearch error codes are described here: https://docs.meilisearch.com/errors/#meilisearch-errors
+        """
+        return await wait_for_task(self.config, uid, timeout_in_ms, interval_in_ms)

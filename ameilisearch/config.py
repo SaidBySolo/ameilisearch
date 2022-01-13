@@ -6,12 +6,12 @@ class Config:
     Client's credentials and configuration parameters
     """
 
-    class Paths:
+    class Paths():
         health = "health"
         keys = 'keys'
         version = 'version'
         index = 'indexes'
-        update = 'updates'
+        task = 'tasks'
         stat = 'stats'
         search = 'search'
         document = 'documents'

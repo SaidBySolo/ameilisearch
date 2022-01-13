@@ -23,13 +23,13 @@ class HttpRequests:
     def __init__(self, config: Config) -> None:
         self.config = config
         self.headers = {
-            "X-Meili-Api-Key": self.config.api_key,
+            "Authorization": f"Bearer {self.config.api_key}",
         }
         self.session: Optional[ClientSession] = None
 
     async def send_request(
         self,
-        method: Literal["GET", "POST", "PUT", "DELETE"],
+        method: Literal["GET", "POST", "PUT", "PATCH", "DELETE"],
         path: str,
         body: Optional[
             Union[Dict[str, Any], List[Dict[str, Any]], List[str], str]
@@ -79,6 +79,14 @@ class HttpRequests:
         content_type: Optional[str] = "application/json",
     ) -> Any:
         return await self.send_request("POST", path, body, content_type)
+
+    async def patch(
+        self,
+        path: str,
+        body: Optional[Union[Dict[str, Any], List[Dict[str, Any]], List[str], str]] = None,
+        content_type: Optional[str] = 'application/json',
+    ) -> Any:
+        return self.send_request("PATCH", path, body, content_type)
 
     async def put(
         self,

@@ -25,9 +25,9 @@ class Client:
         api_key:
             The optional API key for MeiliSearch
         """
-        self.config = Config(url, api_key, timeout=timeout)
+        self.config: Config = Config(url, api_key, timeout=timeout)
 
-        self.http = HttpRequests(self.config)
+        self.http: HttpRequests = HttpRequests(self.config)
 
     async def create_index(self, uid: str, options: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """Create an index.
@@ -410,7 +410,7 @@ class Client:
         """
         return await wait_for_task(self.config, uid, timeout_in_ms, interval_in_ms)
 
-    async def __aenter__(self):
+    async def __aenter__(self) -> "Client":
         return self
 
     async def __aexit__(
@@ -418,6 +418,6 @@ class Client:
         exc_type: Optional[Type[BaseException]],
         exc: Optional[BaseException],
         tb: Optional[TracebackType],
-    ):
+    ) -> None:
         if self.http.session:
             await self.http.session.close()

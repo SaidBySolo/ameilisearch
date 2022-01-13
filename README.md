@@ -2,7 +2,7 @@
 
 > Asynchronous MeiliSearch API client that is **100% compatible** with [MeiliSearch Python](https://github.com/meilisearch/meilisearch-python)
 
-upstream commit hash: ``38d862efb55dc68b0c52b509722cfa4c519d156a``
+upstream commit hash: ``e665923efc9735fd09994b0f01395ceb29051c71``
 
 ## Getting Started
 

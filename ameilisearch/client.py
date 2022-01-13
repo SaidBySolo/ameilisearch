@@ -421,3 +421,7 @@ class Client:
     ) -> None:
         if self.http.session:
             await self.http.session.close()
+
+    async def close(self) -> None:
+        if self.http.session:
+            return self.http.session.close()

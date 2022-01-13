@@ -1,6 +1,7 @@
+from types import TracebackType
 from urllib import parse
 from datetime import datetime
-from typing import Any, AsyncGenerator, Dict,  List, Optional, Union
+from typing import Any, AsyncGenerator, Dict,  List, Optional, Type, Union
 
 from ameilisearch._httprequests import HttpRequests
 from ameilisearch.config import Config
@@ -1084,3 +1085,15 @@ class Index:
             return f'{self.config.paths.index}/{self.uid}/{self.config.paths.document}'
         primary_key = parse.urlencode({'primaryKey': primary_key})
         return f'{self.config.paths.index}/{self.uid}/{self.config.paths.document}?{primary_key}'
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(
+        self,
+        exc_type: Optional[Type[BaseException]],
+        exc: Optional[BaseException],
+        tb: Optional[TracebackType],
+    ):
+        if self.http.session:
+            await self.http.session.close()

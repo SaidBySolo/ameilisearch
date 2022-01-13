@@ -1,4 +1,5 @@
-from typing import Any, Dict, List, Optional
+from types import TracebackType
+from typing import Any, Dict, List, Optional, Type
 
 from ameilisearch.index import Index
 from ameilisearch.config import Config
@@ -408,3 +409,15 @@ class Client:
             An error containing details about why MeiliSearch can't process your request. MeiliSearch error codes are described here: https://docs.meilisearch.com/errors/#meilisearch-errors
         """
         return await wait_for_task(self.config, uid, timeout_in_ms, interval_in_ms)
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(
+        self,
+        exc_type: Optional[Type[BaseException]],
+        exc: Optional[BaseException],
+        tb: Optional[TracebackType],
+    ):
+        if self.http.session:
+            await self.http.session.close()

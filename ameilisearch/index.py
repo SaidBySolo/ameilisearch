@@ -1100,4 +1100,4 @@ class Index:
 
     async def close(self) -> None:
         if self.http.session:
-            return self.http.session.close()
+            await self.http.session.close()
